@@ -1,25 +1,24 @@
 ================================================================================
-# 🐧 PenguWave — Security Operations Portal
+# PenguWave Analyst Portal — Secure Backend & Infrastructure Implementation
+### **Module:** Part 2 — Secure Development Assessment Submission
+![PenguWave Operational System](https://media3.giphy.com/media/XZn9yRAjnVEQ0/giphy.gif)
 ================================================================================
-Official submission for the Upwind Security assessment (Part 2 - Secure Development) 
+---
 
-## Technologies Used
-This project implements a secure full-stack Security Operations Portal featuring:
-- React
-- TypeScript
-- FastAPI
-- Python
-- SQLite
-- SQLAlchemy
-- JWT Authentication
-- Docker
-- Docker Compose
-- bcrypt
+## Architecture & Technology Stack
 
---------------------------------------------------------------------------------
-📂 PROJECT STRUCTURE
---------------------------------------------------------------------------------
+This subsystem establishes a secured, role-scoped full-stack environment designed for security analysts to monitor enterprise telemetry and manage platform access control.
 
+### Core Component Stack
+* **Runtime Environments:** Python, Node.js
+* **Application Frameworks:** FastAPI (Asynchronous Python Web Framework), React (Frontend Engine)
+* **Data Persistence:** SQLite, SQLAlchemy Object-Relational Mapper (ORM)
+* **Cryptographic Baselines:** Bcrypt (Password Serialization), HS256 Signed JSON Web Tokens (JWT)
+* **Infrastructure Containerization:** Docker, Docker Compose, Nginx (Reverse Proxy)
+
+---
+
+## Repository Substructure
 ```text
 part2-backend/
 │
@@ -56,233 +55,135 @@ part2-backend/
 ├── THREAT_ANALYSIS.md         # Security threat analysis
 └── .env                       # Environment variables (ignored in production)
 ```
---------------------------------------------------------------------------------
- HOW TO RUN THE PROJECT
---------------------------------------------------------------------------------
+---
 
-# 🐳 OPTION A — Docker Compose (Recommended)
+## Deployment & Verification Guide
 
+### Orchestrated Deployment via Docker Compose
+To mitigate configuration drift and ensure state isolation, execution through the container mesh is required. Execute from the `part2-backend` directory root:
 
-Clean up potential volume caches and containers from previous runs
+# Purge previous execution states, containers, and isolated volumes
 ```bash
 docker compose down -v
 ```
-Build, recreate, and launch the portal cleanly in background mode
+
+# Compile, build layers, and initialize the isolated service mesh in detached background mode
 ```bash
 docker compose up --build --force-recreate -d
 ```
 
-Application URLs:
+#### Service Gateway Endpoints
+* **Analyst User Interface:** http://localhost (Routed via Nginx)
+* **Backend API Gateway:** http://localhost:3001
 
-🔗 Frontend Gateway:
-```text
-http://localhost
-``` 
+---
 
+### Alternative Manual Infrastructure Initialization (Testing Only)
 
-🔗 Backend API Instance:
-```text
-http://localhost:3001
-``` 
-
-
-# ⚙️ OPTION B — Local Setup (Manual Execution)
-
-# 1. Run the Backend Service 🛠️
+#### 1. Core Service Engine Setup
 ```bash
 cd backend
 python -m venv venv
 ```
-On Windows:
-```bash
-venv\Scripts\activate
-```
-On Mac/Linux:
-```bash
-source venv/bin/activate
-```
-Install third-party packages and execute the server instance
+
+
+* Activation (POSIX): source venv/bin/activate
+* Activation (Windows): venv\Scripts\activate
+
 ```bash
 pip install -r requirements.txt
 python main.py
 ```
 
-Backend Local Link:
-```text
-http://localhost:3001 🔗
-``` 
+*Upon initial bootstrap execution, the backend engine automatically instantiates the localized persistent SQLite database (`database.db`), generates structural schemas, and injects runtime test data models.*
 
-
-On its initial runtime boot, the backend layer automatically instantiates:
-- A local persistent SQLite database binary (`database.db`)
-- Structural schema data tables
-- Pre-populated test data models
-
---------------------------------------------------------------------------------
-
-# 2. Run the Frontend UI 🎨
+#### 2. Client-Side Interface Compilation
 ```bash
 cd PenguWave-main
 npm install
 npm run dev
 ```
 
+* Interface operational gateway defaults locally to: http://localhost:5173
 
-Frontend Local Link:
-```text
-http://localhost:5173 🔗
-``` 
+---
 
+## Seed Accounts & Access Matrix
 
---------------------------------------------------------------------------------
-👥 DEMO USERS
---------------------------------------------------------------------------------
+Authentication and authorization layers can be validated utilizing the following pre-seeded test credentials:
+| Target Account | Identity (Email) | Cleartext Credential | Authorization Scope / State |
+| :--- | :--- | :--- | :--- |
+| **Administrator** | `admin@penguwave.io` | `admin123` | Complete administrative privileges and user management scope. |
+| **Security Analyst** | `analyst@penguwave.io` | `pass456` | Read-only access restricted exclusively to event telemetry. |
+| **Disabled Account** | `viewer@penguwave.io` | `view789` | Explicitly revoked access status (simulated lockout). |
 
- Admin Account (Full read/write permissions):
-```text
-Email: admin@penguwave.io
-Password: admin123
-``` 
+---
 
+## Cryptographic Authentication Lifecycle
 
- Analyst Account (Restricted monitoring permissions):
-```text
-Email: analyst@penguwave.io
-Password: pass456
-``` 
+Session state verification is implemented via a stateless token model adhering to the following logical flow:
 
-
- Viewer Account (Simulated locked out target):
-```text
-Email: viewer@penguwave.io
-Password: view789
-Status: Disabled
-``` 
-
-
---------------------------------------------------------------------------------
-🔐 AUTHENTICATION FLOW
---------------------------------------------------------------------------------
-
-Identity verification follows this logical runtime path:
-
-1. User submits an email and password pair inside the modal form interface.
-2. The server tier extracts records and matches cleartext via safe bcrypt routines.
-3. Upon validation check success, the system signs a stateless JWT token.
-4. Client application variables trap this payload string inside LocalStorage.
-5. Secure traffic headers append state keys inside subsequent requests:
-
+1. **Credential Ingestion:** The client posts a structured payload containing an identity and secret pair to the `/api/auth/login` gateway.
+2. **Secret Verification:** The backend extracts the matching row and validates cleartext authenticity against the saved database hash using resource-bounded `bcrypt` routines.
+3. **Token Issuance:** Upon explicit verification success, the server compiles and signs a stateless JSON Web Token (JWT) utilizing the `HS256` hashing signature.
+4. **Client Ingestion:** The client runtime captures the token payload, persisting the signed token inside `LocalStorage`.
+5. **Authenticated Request Loop:** Subsequent API calls append the authorization artifact inside explicit request headers:
    Authorization: Bearer <token>
+6. **Server Validation:** The backend decodes, parses, and validates the integrity of the cryptographic signature prior to route resolution.
 
-6. The backend system decodes and evaluates the cryptographic signature on every call.
+*Session Lifetimes: Access tokens are mathematically bound to expire after a 1-hour window.*
 
-⚠️ JWT session strings are hardcapped to expire automatically after 1 hour.
+---
 
---------------------------------------------------------------------------------
-🛡️ AUTHORIZATION (RBAC)
---------------------------------------------------------------------------------
+## Server-Side Authorization Enforcements (RBAC)
 
-Access permissions are strictly enforced on the server side using an RBAC model.
+The system operates under a strict server-side Role-Based Access Control (RBAC) perimeter. Client-side UI adaptations (such as stripping tabs from user views) are implemented exclusively for usability purposes; all data controls are validated at the API boundaries.
 
-🟢 Admin Role:
-- Full permissions to access security telemetry event feeds.
-- Full access to User Management control pathways.
-- Authorized to create new analyst profiles.
-- Authorized to drop user profiles (cannot drop self account state).
+* **Administrative Scope:** Granted unfiltered read/write privileges over telemetry feeds and the User Management database parameters. Authorized to provision new analyst profiles and toggle execution records (self-deletion actions are structurally blocked).
+* **Analyst / Non-Admin Scope:** Restricted exclusively to parsing read-only event telemetry. Blocked from accessing administrative route parameters or mutating user records.
 
-🟡 Non-Admin Roles (Analyst / Viewer):
-- Limited to viewing read-only event parameters.
-- Expressly blocked from reaching user management data layers.
+### Error Response Mapping
+* `401 Unauthorized`: Request missing a validated cryptographic token string.
+* `403 Forbidden`: Request contains a valid signature, but the underlying identity scope lacks sufficient permission boundaries.
 
-Server Rejection Mapping:
-- 401 Unauthorized -> Call made without a valid or attached token string.
-- 403 Forbidden    -> Token is valid, but current account role lacks privileges.
+---
 
-💡 Client Note: The React UI explicitly drops the visible Users tab for analysts.
+## Subsystem API Blueprint
 
---------------------------------------------------------------------------------
-🌐 API ENDPOINTS
---------------------------------------------------------------------------------
+### Security Telemetry Routes
+* `GET /api/events` — Fetches security incident records from the system backend (Requires active authentication token).
 
- Authentication Pathway:
-```text
-POST   /api/auth/login
-``` 
+### Identity Management Routes (Admin Only)
+* `GET /api/users` — Queries complete system identity registry data.
+* `POST /api/users` — Provisions a new identity record with custom defined role parameters.
+* `DELETE /api/users/{user_id}` — Removes an active user account record from persistence.
 
+### System Control Routes
+* `GET /api/health` — Verifies API responsiveness and structural status.
 
- Events Architecture Pathways:
-```text
-GET    /api/events
-``` 
+---
 
+## Data Layer & Structural Hardening
 
- User Management Patterns:
-```text
-GET    /api/users
-POST   /api/users
-DELETE /api/users/{user_id}
-``` 
+The persistence engine applies defenses against input manipulation vectors:
+* **Query Parameterization:** Interacting via SQLAlchemy ORM abstractions natively prevents traditional SQL Injection (SQLi) vectors.
+* **Sanitized Storage Profiles:** Cleartext passwords are never committed to permanent disk media; tables store only securely cryptographically salted hashes (`bcrypt`), defined roles, and operational status parameters.
 
+---
 
- System State Pathway:
-```text
-GET    /api/health
-``` 
+## Production Security Posture & Mitigations
 
+To transition this architecture from local evaluation boundaries into enterprise-grade hosting profiles, the following infrastructural mitigations must be implemented:
 
---------------------------------------------------------------------------------
-📊 EVENTS DATA
---------------------------------------------------------------------------------
+1. **Transport Layer Hardening:** Enforce uniform TLS termination rules across all ingress points, mandating strict HTTPS connections.
+2. **Token Session Migration:** Move session management artifacts out of browser `LocalStorage` into signed `HttpOnly`, `SameSite=Strict` secure cookies to eliminate Cross-Site Scripting (XSS) session extraction vulnerabilities.
+3. **Database Layer Scaling:** Replace the embedded single-file SQLite database with an enterprise relational system like PostgreSQL to enable network isolation and proper concurrent transactions.
+4. **Secret Lifecycle Management:** Strip all configuration baselines out of configuration files, substituting runtime injection via decoupled Cloud Secret Management utilities.
+5. **Rate-Limiting Matrices:** Deploy explicit boundary rate-limiting engines across critical API endpoints (`/api/auth/login`) to blunt automated online credential brute-force attempts.
+6. **Telemetry & SIEM Aggregation:** Pipe structural event logs and infrastructure audits out to central Security Information and Event Management (SIEM) systems to ensure append-only visibility preservation.
 
-Security incident tracking attributes are parsed out of local data files:
-```text
-`mock_events.json`
-``` 
+---
 
+## Development & Assessment Boundaries
 
-Anonymous public queries are discarded; only active authenticated tokens can pass.
-
---------------------------------------------------------------------------------
-💾 STORAGE & PRIVACY
---------------------------------------------------------------------------------
-
-The service layer state machine utilizes:
-- SQLite persistent databases
-- Parameterized safe interactions via SQLAlchemy ORM mappings
-
-Raw plain text strings are never committed to disk spaces.
-Stored columns keep metadata parameters filtered to:
-- Securely salted password hashes (Bcrypt)
-- Designated access scopes (roles)
-- Account lifecycles statuses (active/disabled)
-
---------------------------------------------------------------------------------
-🏗️ PRODUCTION SECURITY CONSIDERATIONS
---------------------------------------------------------------------------------
-
-Moving this solution stack out of basic testing into enterprise boundaries requires:
-- Restricting network paths to enforce full HTTPS/TLS transport rules.
-- Transitioning LocalStorage token hooks over to signed HttpOnly secure cookies.
-- Upgrading the SQLite disk files over to engine architectures like PostgreSQL.
-- Eliminating local configuration hardcoding via Cloud Secret Management utilities.
-- Imposing strict route rate-limiting layers to blunt automated brute force loops.
-- Interfacing infrastructure logs out to central SIEM pipelines.
-- Deploying systems securely behind production reverse proxy gateways (Nginx).
-- Restricting raw database exposure to tightly closed isolated Private Subnets.
-
---------------------------------------------------------------------------------
-📝 DEVELOPMENT NOTES
---------------------------------------------------------------------------------
-
-This software package is optimized for assessment and demonstration purposes.
-
-Local environment parameters (.env) and pre-seeded SQLite configurations are explicitly 
-left available inside the file paths to allow evaluators to immediately stand up the 
-project. 
-
-In real deployment scenarios:
-- Environment parameter templates are blocked from git tracking (.gitignore entries).
-- Secrets are dynamically injected into active environments at process execution time.
-
-
-================================================================================
+This codebase has been optimized for assessment and auditing efficiency. Environment files (`.env`) and local database configuration defaults are purposefully tracked within this testing layout to ensure immediate single-command execution and zero-friction evaluation by the reviewing team.
