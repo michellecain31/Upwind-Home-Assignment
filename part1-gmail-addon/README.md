@@ -1,3 +1,4 @@
+================================================================================
 # Part 1 - Gmail Add-on: Malicious Email Scorer
 <p align="center">
   <img src="https://cdn-icons-png.flaticon.com/512/8654/8654266.png" width="120" alt="Upwind Sentinel Logo"/>
@@ -6,6 +7,8 @@
 <p align="center"><b>Next-Gen Phishing Intelligence & Real-time Email Scoring Engine</b></p>
 
 A Gmail add-on that analyzes opened emails and produces a risk score with a clear verdict.
+
+================================================================================
 
 ## Architectural Decisions & Trade-offs
 ### Why a Dedicated Backend instead of a purely client-side script?

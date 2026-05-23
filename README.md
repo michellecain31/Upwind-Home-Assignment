@@ -1,7 +1,9 @@
 ================================================================================
 #  Upwind Security — Home Assignment Submission
-================================================================================
+![System Architecture Diagram](https://storage.googleapis.com/clean-finder-353810/$6NcygC31Z3nl7RyK7Bk7Z975h3qeCgnEGRopO9DlGwJBtDgZatyk3h.png)
 ### Candidate: Michelle Cain | Role: Software Engineering Challenge 🚀
+================================================================================
+
 
 Welcome to my official repository submission for the Upwind Security Home Assignment. This project encompasses two main security-focused parts, transitioning from client-side mail ecosystem defenses to building an enterprise-grade, containerized secure portal architecture.
 
