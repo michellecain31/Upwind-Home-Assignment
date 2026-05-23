@@ -52,14 +52,22 @@ Gmail → Apps Script → ngrok → Python Backend → result back to Gmail
 
 The scoring engine operates on a deterministic heuristic model, assessing multiple independent vector signals up to a maximum **Risk Score of 100**:
 
-| Signal Name | Risk Weight | Analysis Mechanism & Security Value |
-| :--- | :---: | :--- |
-| Phishing Keywords | +30 Points | Scans the email body using optimized regex matching for classic social engineering trigger words (e.g., urgency, account suspension, immediate financial confirmation). |
-| Sender Mismatch | +25 Points | Analyzes the `From` and `Reply-To` headers to detect spoofing patterns, ensuring that potential responses are not routed to a domain different from the sender's origin. |
-| URL Reputation | +50 Points | Extracts links from the email body and queries the Google Safe Browsing API to check for known malware, social engineering schemes, and blacklisted domains. |
-| URL Count Density | +15 Points | Evaluates the quantity of embedded URLs. A high link-to-text density is a strong structural indicator of mass phishing campaigns. |
-| Homoglyph Detection | +40 Points | Detects internationalized non-ASCII characters in the sender's domain. This flags sophisticated homograph attacks where visually identical characters (e.g., Cyrillic 'а') are used to impersonate trusted brands. |
-| Domain Age Check | +35 Points | Queries the global public RDAP registry dynamically to analyze domain registration dates. Senders utilizing newly registered domains (<30 days old) are heavily penalized due to high phishing correlations. |
+
+| Signal | Max Score | Description |
+|---|---|---|
+| Phishing Keywords | 30 | Classic phishing phrases in email body |
+| Sender Mismatch | 25 | From and Reply-To domains don't match |
+| URL Reputation | 50 | URLs flagged by Google Safe Browsing |
+| URL Count | 15 | More than 5 URLs in the email |
+| Homoglyph Detection | 40 | Non-ASCII characters in sender domain |
+| Domain Age Check | 35 | Sender domain registered less than 30 days ago |
+| Suspicious TLD | 20 | URLs with high-risk domain extensions |
+| Brand Spoofing | 30 | Email mentions a known brand but sender domain doesn't match |
+
+**Verdict thresholds:**
+- 0–39 → SAFE
+- 40–59 → SUSPICIOUS
+- 60–100 → MALICIOUS
 
 > **Contextual Scanning History:** The add-on dynamically retrieves the 10 most recent scans from the SQLite storage, providing critical historical context on previously scanned senders and results.
 
