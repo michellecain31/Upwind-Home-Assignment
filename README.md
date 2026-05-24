@@ -23,14 +23,13 @@ Upwind-Home-Assignment/
 ##  Repository Structure & Navigation
 
 * Part 1 — Gmail Add-on: Malicious Email Scorer (./part1-gmail-addon)
-  An endpoint analysis layer leveraging Google Workspace APIs to isolate, parse, and evaluate inbound messaging anomalies. For deployment guidelines and metadata evaluation scopes, review the Subsystem Part 1 Documentation.
+  An endpoint analysis layer leveraging Google Workspace APIs to isolate, parse, and evaluate inbound messaging anomalies.For deployment guidelines and metadata evaluation scopes, review the [Subsystem Part 1 Documentation](./part1-gmail-addon/README.md).
 
 * Part 2 — Secure Development: Analyst Portal Backend (./part2-backend)
-  A fully functional, decoupled backend architecture driving role-restricted monitoring dashboards and live network alerts. For environment management and single-command local orchestration parameters, review the Subsystem Part 2 Documentation.
+  A fully functional, decoupled backend architecture driving role-restricted monitoring dashboards and live network alerts. For environment management and single-command local orchestration parameters, review the [Subsystem Part 2 Documentation](./part2-backend/README.md).
 
 * Defensive Blueprint & Risk Modeling (./part2-backend/THREAT_ANALYSIS.md)
-  A dedicated threat model tracking authorization boundaries, structural input vectors, authentication lifecycles, and backend mitigation assumptions.
-
+ A dedicated threat model tracking authorization boundaries, structural input vectors, authentication lifecycles, and backend mitigation assumptions can be found in the [Threat Analysis Document](./part2-backend/THREAT_ANALYSIS.md).
 ---
 
 ##  Executive Summary of Deliverables

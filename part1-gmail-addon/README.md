@@ -4,9 +4,9 @@
   <img src="https://cdn-icons-png.flaticon.com/512/8654/8654266.png" width="120" alt="Upwind Sentinel Logo"/>
 </p>
 
-<p align="center"><b>Next-Gen Phishing Intelligence & Real-time Email Scoring Engine</b></p>
+<p align="center"><b>A Gmail add-on that analyzes opened emails and produces a risk score with a clear verdict.
+</b></p>
 
-A Gmail add-on that analyzes opened emails and produces a risk score with a clear verdict.
 
 ================================================================================
 
