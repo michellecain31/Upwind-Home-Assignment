@@ -187,3 +187,11 @@ To transition this architecture from local evaluation boundaries into enterprise
 ## Development & Assessment Boundaries
 
 This codebase has been optimized for assessment and auditing efficiency. Environment files (`.env`) and local database configuration defaults are purposefully tracked within this testing layout to ensure immediate single-command execution and zero-friction evaluation by the reviewing team.
+
+---
+
+## Demo Video
+
+Here is a short video demonstration of the PenguWave application in action, showcasing its core features and workflows:
+
+[![PenguWave Demo](demovid.png)](https://youtu.be/AKjDqY6Ae14)
