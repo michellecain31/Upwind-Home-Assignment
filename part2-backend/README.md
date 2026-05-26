@@ -67,7 +67,7 @@ To mitigate configuration drift and ensure state isolation, execution through th
 docker compose down -v
 ```
 
-# Compile, build layers, and initialize the isolated service mesh in detached background mode
+# Compile, build layers, and initialize the containerized multi-service environment in detached background mode
 ```bash
 docker compose up --build --force-recreate -d
 ```
@@ -124,14 +124,14 @@ Authentication and authorization layers can be validated utilizing the following
 Session state verification is implemented via a stateless token model adhering to the following logical flow:
 
 1. **Credential Ingestion:** The client posts a structured payload containing an identity and secret pair to the `/api/auth/login` gateway.
-2. **Secret Verification:** The backend extracts the matching row and validates cleartext authenticity against the saved database hash using resource-bounded `bcrypt` routines.
+2. **Secret Verification:** The backend extracts the matching row and validates cleartext authenticity against the saved database hash using bcrypt password hashing.
 3. **Token Issuance:** Upon explicit verification success, the server compiles and signs a stateless JSON Web Token (JWT) utilizing the `HS256` hashing signature.
 4. **Client Ingestion:** The client runtime captures the token payload, persisting the signed token inside `LocalStorage`.
 5. **Authenticated Request Loop:** Subsequent API calls append the authorization artifact inside explicit request headers:
    Authorization: Bearer <token>
 6. **Server Validation:** The backend decodes, parses, and validates the integrity of the cryptographic signature prior to route resolution.
 
-*Session Lifetimes: Access tokens are mathematically bound to expire after a 1-hour window.*
+*Session Lifetimes: Access tokens are JWT tokens - expire after 1 hour.*
 
 ---
 
@@ -139,7 +139,7 @@ Session state verification is implemented via a stateless token model adhering t
 
 The system operates under a strict server-side Role-Based Access Control (RBAC) perimeter. Client-side UI adaptations (such as stripping tabs from user views) are implemented exclusively for usability purposes; all data controls are validated at the API boundaries.
 
-* **Administrative Scope:** Granted unfiltered read/write privileges over telemetry feeds and the User Management database parameters. Authorized to provision new analyst profiles and toggle execution records (self-deletion actions are structurally blocked).
+* **Administrative Scope:** Granted unfiltered read/write privileges over security events data and the User Management database parameters. Authorized to provision new analyst profiles and toggle execution records (self-deletion actions are structurally blocked).
 * **Analyst / Non-Admin Scope:** Restricted exclusively to parsing read-only event telemetry. Blocked from accessing administrative route parameters or mutating user records.
 
 ### Error Response Mapping
@@ -173,7 +173,7 @@ The persistence engine applies defenses against input manipulation vectors:
 
 ## Production Security Posture & Mitigations
 
-To transition this architecture from local evaluation boundaries into enterprise-grade hosting profiles, the following infrastructural mitigations must be implemented:
+To transition this architecture from local evaluation boundaries into secure full-stack analyst portal hosting profiles, the following infrastructural mitigations must be implemented:
 
 1. **Transport Layer Hardening:** Enforce uniform TLS termination rules across all ingress points, mandating strict HTTPS connections.
 2. **Token Session Migration:** Move session management artifacts out of browser `LocalStorage` into signed `HttpOnly`, `SameSite=Strict` secure cookies to eliminate Cross-Site Scripting (XSS) session extraction vulnerabilities.
