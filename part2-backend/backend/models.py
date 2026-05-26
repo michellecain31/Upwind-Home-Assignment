@@ -1,29 +1,29 @@
-# מגדיר את מבנה הנתונים שנכנס ויוצא מה-API
+# API Data Transfer Objects: Outlines validation models and structural contracts for the Analyst Portal endpoints.
 
-from pydantic import BaseModel, EmailStr
 from typing import Optional
+from pydantic import BaseModel, EmailStr
 
 
-# מה שמגיע מהפרונטאנד בעת התחברות
+# Schema for structural frontend client credential login payloads
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
 
-# מה שחוזר אחרי התחברות מוצלחת
+# Schema for context responses emitted upon successful login events
 class LoginResponse(BaseModel):
     token: str
     user: "UserResponse"
 
 
-# מה שמגיע כשיוצרים משתמש חדש
+# Schema for newly-provisioned administrative user profile definitions
 class CreateUserRequest(BaseModel):
     email: EmailStr
     password: str
     role: str = "analyst"
 
 
-# מה שחוזר כשמבקשים פרטי משתמש - בלי סיסמה!
+# Schema for serialized identity contexts, strictly stripping password material
 class UserResponse(BaseModel):
     id: str
     email: str
@@ -34,7 +34,7 @@ class UserResponse(BaseModel):
         from_attributes = True
 
 
-# מה שחוזר מה-API של האירועים
+# Schema for structural security incident alerting telemetry records
 class EventResponse(BaseModel):
     id: str
     timestamp: str

@@ -1,3 +1,5 @@
+// Navbar Component: Renders global navigation controls and conditional links based on stateful RBAC configurations.
+
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { getRoleFromToken } from "../api";
 
@@ -11,12 +13,11 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
   const token = localStorage.getItem("token");
   const isAdmin = getRoleFromToken() === "admin";
 
+  // Handles stateful client logout session termination by discarding stored token locally
   const handleLogout = () => {
-    // JWT logout is purely client-side: discard the token.
-    // There is no /api/auth/logout endpoint — the backend is stateless.
     localStorage.removeItem("token");
     navigate("/events");
-    window.location.reload();
+    window.location.reload(); // Restructures active routing permissions contextually
   };
 
   return (

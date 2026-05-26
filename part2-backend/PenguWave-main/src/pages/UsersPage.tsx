@@ -1,3 +1,5 @@
+// UsersPage Component: Provides administrative views for user profile state management, provisioning, and de-provisioning.
+
 import { useState, useEffect } from "react";
 import { User } from "../types";
 import { getUsers, createUser, deleteUser } from "../api";
@@ -12,7 +14,7 @@ export default function UsersPage() {
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState("analyst");
 
-  // טעינת המשתמשים מהשרת בעת עליית העמוד
+  // Injects identity records array into local component state on mount
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -33,8 +35,7 @@ export default function UsersPage() {
       .catch((err) => {
         console.error("Error fetching users:", err);
         
-        // פתרון סופי והרמטי: בדיקה אם המשתמש מחובר.
-        // אם יש טוקן והגענו לפה, השרת החזיר 403 (כי הרי הלוגים מראים 403 Forbidden).
+        // Evaluates active session token context to differentiate between unauthorized roles and connectivity drops
         const hasToken = !!localStorage.getItem("token");
         
         if (hasToken) {
@@ -60,7 +61,7 @@ export default function UsersPage() {
       });
 
       if (result && !result.error) {
-        fetchUsers(); // רענון הרשימה לאחר יצירה מוצלחת
+        fetchUsers(); // Re-fetches the record collection following successful provisioning
         setNewEmail("");
         setNewPassword("");
         setNewRole("analyst");
@@ -80,7 +81,7 @@ export default function UsersPage() {
     try {
       const result = await deleteUser(id);
       if (result && !result.error) {
-        fetchUsers(); // רענון הרשימה לאחר מחיקה
+        fetchUsers(); // Syncs layout by refreshing the datagrid rows after removal
       } else {
         alert(result.error || "Failed to delete user");
       }

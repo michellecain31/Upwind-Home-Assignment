@@ -1,3 +1,5 @@
+// LoginModal Component: Renders the user authentication modal backdrop, forms, and handles login submissions.
+
 import { useState } from "react";
 
 interface LoginModalProps {
@@ -9,6 +11,7 @@ export default function LoginModal({ onClose }: LoginModalProps) {
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Form submission handler: Posts credentials to the gateway and caches token material on success
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
@@ -24,7 +27,7 @@ export default function LoginModal({ onClose }: LoginModalProps) {
 
       if (res.ok && data.token) {
         localStorage.setItem("token", data.token);
-        window.location.reload();
+        window.location.reload(); // Synchronizes the global state across protected views
         onClose();
       } else {
         setErrorMessage(data.detail || data.error || "Invalid email or password");

@@ -1,4 +1,5 @@
-// הקוד שרץ בתוך Gmail - שולף פרטי אימייל, שולח לbackend ומציג תוצאה
+// Gmail Add-on script: Extracts message parameters, evaluates risks via backend backend, and renders verdict UI.
+
 const BACKEND_URL = "https://bulge-nearby-series.ngrok-free.dev";
 
 const LOGO_URL = "https://cdn-icons-png.flaticon.com/512/8654/8654266.png"; 
@@ -11,12 +12,14 @@ function onGmailMessage(e) {
   const messageId = accessor.messageId;
   const token = accessor.accessToken;
 
+  // Contextual access scope elevation for the target message
   GmailApp.setCurrentMessageAccessToken(token);
   const message = GmailApp.getMessageById(messageId);
 
+  // Core metadata extraction
   const subject = message.getSubject();
   const sender = message.getFrom();
-  const body = message.getPlainBody();
+  const body = message.getPlainBody(); // Limitation: Plain text bypasses HTML-embedded vectors
   const replyTo = message.getReplyTo();
 
   const urls = extractUrls(body);
@@ -33,23 +36,31 @@ function onGmailMessage(e) {
     method: "post",
     contentType: "application/json",
     payload: JSON.stringify(payload),
-    muteHttpExceptions: true,
+    muteHttpExceptions: true, // Prevents Apps Script crash on non-200 responses
     headers: {
-      "ngrok-skip-browser-warning": "true"
+      "ngrok-skip-browser-warning": "true" // Required utility header for ngrok tunnels
     }
   };
 
+  // Synchronous network fetch execution
   const response = UrlFetchApp.fetch(BACKEND_URL + "/scan", options);
   const result = JSON.parse(response.getContentText());
 
   return buildCard(result, subject, sender);
 }
 
+/**
+ * Regex-based URL extraction utility.
+ * Limitation: Does not handle advanced obfuscation or unicode domain spoofing.
+ */
 function extractUrls(text) {
   const urlRegex = /https?:\/\/[^\s]+/g;
   return text.match(urlRegex) || [];
 }
 
+/**
+ * Dynamic UI builder mapping backend scoring to an explainable security card layout.
+ */
 function buildCard(result, subject, sender) {
   const card = CardService.newCardBuilder();
   
@@ -77,6 +88,7 @@ function buildCard(result, subject, sender) {
     statusImage = IMAGE_SUSPICIOUS; 
   }
 
+  // Renders aggregate threat categorization and raw score
   headerSection.addWidget(
     CardService.newDecoratedText()
       .setText(`<font size="large"><b>${verdictIcon} ${result.verdict}</b></font>`)
@@ -96,6 +108,7 @@ function buildCard(result, subject, sender) {
 
   const signalsSection = CardService.newCardSection().setHeader("Signal Breakdown");
 
+  // Dynamic mapping decouples UI presentation from backend calculation rules
   result.signals.forEach(signal => {
     if (signal.score > 0) {
       signalsSection.addWidget(
@@ -119,6 +132,7 @@ function buildCard(result, subject, sender) {
   const footerSection = CardService.newCardSection();
   footerSection.addWidget(CardService.newDivider());
   
+  // Interactive navigation to state history view
   const historyButton = CardService.newTextButton()
     .setText("📜 View Recent Scans")
     .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
@@ -130,6 +144,9 @@ function buildCard(result, subject, sender) {
   return card.build();
 }
 
+/**
+ * History view retrieval using standard CardService callback.
+ */
 function getHistory(e) {
   const options = {
     method: "get",
@@ -145,6 +162,7 @@ function getHistory(e) {
   const card = CardService.newCardBuilder();
   const section = CardService.newCardSection().setHeader("Recent Scans History");
 
+  // UX Optimization: Constrains layout bounds to the top 10 historical entries
   scans.slice(0, 10).forEach(scan => {
     let verdictColor = "#28a745"; 
     if (scan.verdict === "MALICIOUS") verdictColor = "#dc3545";

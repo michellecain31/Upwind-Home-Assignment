@@ -1,7 +1,9 @@
-// Empty string means "same origin" — Nginx proxies /api/* to the backend container.
-// For local dev without Docker, change this to "http://localhost:3001".
+// Frontend API Client: Manages authentication caching, client-side JWT parsing, and HTTP requests to backend endpoints.
+
+// Empty string sets context to "same origin" for Nginx proxy routing. Use "http://localhost:3001" for local host testing.
 const API_URL = "";
 
+// Decodes stateful client identity context directly from stored token payloads
 export function getRoleFromToken(): string | null {
   const token = localStorage.getItem("token");
   if (!token) return null;
@@ -16,6 +18,7 @@ export function getRoleFromToken(): string | null {
   }
 }
 
+// Global response interceptor utility enforcing standard error-handling bounds
 async function handleResponse(res: Response) {
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
@@ -25,6 +28,7 @@ async function handleResponse(res: Response) {
   return res.json();
 }
 
+// Dispatches authentication credentials and caches returned authorization token materials
 export async function login(email: string, password: string) {
   const res = await fetch(`${API_URL}/api/auth/login`, {
     method: "POST",
@@ -36,6 +40,7 @@ export async function login(email: string, password: string) {
   return data;
 }
 
+// Fetches structural monitoring incident telemetry passing standard token proofs
 export async function getEvents() {
   const token = localStorage.getItem("token");
   if (!token) {
@@ -47,6 +52,7 @@ export async function getEvents() {
   return handleResponse(res);
 }
 
+// Fetches administrative user registry records
 export async function getUsers() {
   const token = localStorage.getItem("token");
   const res = await fetch(`${API_URL}/api/users`, {
@@ -55,6 +61,7 @@ export async function getUsers() {
   return handleResponse(res);
 }
 
+// Provisions new identity contexts under administrative role controls
 export async function createUser(user: { email: string; password: string; role: string }) {
   const token = localStorage.getItem("token");
   const res = await fetch(`${API_URL}/api/users`, {
@@ -65,6 +72,7 @@ export async function createUser(user: { email: string; password: string; role: 
   return handleResponse(res);
 }
 
+// De-provisions identity profiles matching a target resource ID
 export async function deleteUser(id: string) {
   const token = localStorage.getItem("token");
   const res = await fetch(`${API_URL}/api/users/${id}`, {

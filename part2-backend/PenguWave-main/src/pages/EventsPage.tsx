@@ -1,3 +1,5 @@
+// EventsPage Component: Renders security incident alert logs, handles sorting filters, and displays specific event data.
+
 import { useState, useEffect } from "react";
 import { SecurityEvent } from "../types";
 import { getEvents } from "../api";
@@ -9,12 +11,14 @@ export default function EventsPage() {
   const [events, setEvents] = useState<SecurityEvent[]>([]);
   const [error, setError] = useState("");
 
+  // Injects telemetry data payload into active component memory state bounds upon initial runtime load
   useEffect(() => {
     getEvents()
       .then((data) => setEvents(data))
       .catch((err) => setError(err.message));
   }, []);
 
+  // Performs functional client-side matching checks for target keywords and severity thresholds
   const filtered = events.filter((e) => {
     const matchesSearch =
       e.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -24,12 +28,14 @@ export default function EventsPage() {
     return matchesSearch && matchesSeverity;
   });
 
+  // Color mapping definitions indicating threat classification layers
   const severityColor = (s: string) => {
     if (s === "HIGH") return "red";
     if (s === "MEDIUM") return "orange";
     return "green";
   };
 
+  // Error boundary intercept mapping unauthorized context scopes to specific fallback views
   if (error) {
     const isUnauthenticated =
       error === "NOT_AUTHENTICATED" || error.toLowerCase().includes("invalid token");

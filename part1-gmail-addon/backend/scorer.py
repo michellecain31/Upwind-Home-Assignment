@@ -1,23 +1,26 @@
-# הלב של המערכת - כאן קורה כל הניתוח של האימייל
-# כל פונקציה בודקת דבר אחד ומחזירה כמה נקודות סיכון הוא מוסיף
+# Threat Scoring Engine: Analyzes payload parameters and evaluates risk vectors.
 
-import re
-import json
-import requests
 import os
+import re
 from datetime import datetime
-from models import EmailRequest, SignalResult, ScanResult
 from dotenv import load_dotenv
+from models import EmailRequest, ScanResult, SignalResult
+import requests
 
 load_dotenv()
 
 SAFE_BROWSING_API_KEY = os.getenv("SAFE_BROWSING_API_KEY")
 
-# ביטויים קלאסיים שמופיעים הרבה באימיילי phishing
 PHISHING_KEYWORDS = [
-    "verify your account", "urgent action required", "click here immediately",
-    "your account has been suspended", "confirm your identity", "unusual activity",
-    "update your payment", "you have won", "limited time offer"
+    "verify your account",
+    "urgent action required",
+    "click here immediately",
+    "your account has been suspended",
+    "confirm your identity",
+    "unusual activity",
+    "update your payment",
+    "you have won",
+    "limited time offer",
 ]
 
 URGENT_PATTERNS = re.compile(
@@ -30,8 +33,21 @@ URGENT_PATTERNS = re.compile(
 )
 
 SUSPICIOUS_TLDS = {
-    ".xyz", ".top", ".club", ".online", ".site", ".tk", ".ml", ".ga",
-    ".cf", ".gq", ".pw", ".work", ".click", ".link", ".download",
+    ".xyz",
+    ".top",
+    ".club",
+    ".online",
+    ".site",
+    ".tk",
+    ".ml",
+    ".ga",
+    ".cf",
+    ".gq",
+    ".pw",
+    ".work",
+    ".click",
+    ".link",
+    ".download",
 }
 
 BRAND_SPOOF_PATTERNS = re.compile(
@@ -44,12 +60,18 @@ URL_REGEX = re.compile(r"https?://[^\s\"'<>()]+", re.IGNORECASE)
 EMAIL_REGEX = re.compile(r"[\w.\-+]+@[\w.\-]+\.[a-zA-Z]{2,}")
 
 FREE_EMAIL_DOMAINS = {
-    "gmail.com", "yahoo.com", "hotmail.com", "outlook.com",
-    "aol.com", "mail.com", "protonmail.com", "yandex.com",
+    "gmail.com",
+    "yahoo.com",
+    "hotmail.com",
+    "outlook.com",
+    "aol.com",
+    "mail.com",
+    "protonmail.com",
+    "yandex.com",
 }
 
 
-# מחפשת ביטויים חשודים בתוכן האימייל - מוסיפה 30 נקודות אם מוצאת
+# Signal 1: Scans body text for high-correlation social engineering keywords
 def check_phishing_keywords(body: str) -> SignalResult:
     body_lower = body.lower()
     found = [kw for kw in PHISHING_KEYWORDS if kw in body_lower]
@@ -58,15 +80,19 @@ def check_phishing_keywords(body: str) -> SignalResult:
         return SignalResult(
             name="Phishing Keywords",
             score=30,
-            detail=f"Found suspicious phrases: {', '.join(found)}"
+            detail=f"Found suspicious phrases: {', '.join(found)}",
         )
-    return SignalResult(name="Phishing Keywords", score=0, detail="No suspicious phrases found")
+    return SignalResult(
+        name="Phishing Keywords", score=0, detail="No suspicious phrases found"
+    )
 
 
-# בודקת שה-From וה-Reply-To מאותו דומיין - טריק נפוץ של תוקפים
+# Signal 2: Identifies spoofing risks by looking for mismatched Return Paths
 def check_sender_mismatch(sender: str, reply_to: str) -> SignalResult:
     if not reply_to:
-        return SignalResult(name="Sender Mismatch", score=0, detail="No Reply-To header")
+        return SignalResult(
+            name="Sender Mismatch", score=0, detail="No Reply-To header"
+        )
 
     sender_domain = sender.split("@")[-1].strip(">").lower()
     reply_domain = reply_to.split("@")[-1].strip(">").lower()
@@ -75,31 +101,39 @@ def check_sender_mismatch(sender: str, reply_to: str) -> SignalResult:
         return SignalResult(
             name="Sender Mismatch",
             score=25,
-            detail=f"From domain ({sender_domain}) differs from Reply-To ({reply_domain})"
+            detail=f"From domain ({sender_domain}) differs from Reply-To ({reply_domain})",
         )
-    return SignalResult(name="Sender Mismatch", score=0, detail="Sender and Reply-To match")
+    return SignalResult(
+        name="Sender Mismatch", score=0, detail="Sender and Reply-To match"
+    )
 
 
-# שולחת את ה-URLs ל-API של גוגל שיודע אילו אתרים ידועים כזדוניים
+# Signal 3: Enriches telemetry using Google Safe Browsing reputation lookup API
 def check_urls_safe_browsing(urls: list) -> SignalResult:
     if not urls or not SAFE_BROWSING_API_KEY:
-        return SignalResult(name="URL Reputation", score=0, detail="No URLs to check")
+        return SignalResult(
+            name="URL Reputation", score=0, detail="No URLs to check"
+        )
 
     payload = {
         "client": {"clientId": "email-scorer", "clientVersion": "1.0"},
         "threatInfo": {
-            "threatTypes": ["MALWARE", "SOCIAL_ENGINEERING", "UNWANTED_SOFTWARE"],
+            "threatTypes": [
+                "MALWARE",
+                "SOCIAL_ENGINEERING",
+                "UNWANTED_SOFTWARE",
+            ],
             "platformTypes": ["ANY_PLATFORM"],
             "threatEntryTypes": ["URL"],
-            "threatEntries": [{"url": url} for url in urls]
-        }
+            "threatEntries": [{"url": url} for url in urls],
+        },
     }
 
     try:
         response = requests.post(
             f"https://safebrowsing.googleapis.com/v4/threatMatches:find?key={SAFE_BROWSING_API_KEY}",
             json=payload,
-            timeout=5
+            timeout=5,
         )
         data = response.json()
 
@@ -108,50 +142,66 @@ def check_urls_safe_browsing(urls: list) -> SignalResult:
             return SignalResult(
                 name="URL Reputation",
                 score=50,
-                detail=f"Malicious URLs detected: {', '.join(flagged)}"
+                detail=f"Malicious URLs detected: {', '.join(flagged)}",
             )
     except Exception:
         pass
 
-    return SignalResult(name="URL Reputation", score=0, detail="All URLs appear clean")
+    return SignalResult(
+        name="URL Reputation", score=0, detail="All URLs appear clean"
+    )
 
 
-# יותר מ-5 לינקים באימייל זה חשוד
+# Signal 4: Monitors high-density hyperlink limits within body text
 def check_url_count(body: str) -> SignalResult:
-    urls = re.findall(r'https?://\S+', body)
+    urls = re.findall(r"https?://\S+", body)
     if len(urls) > 5:
         return SignalResult(
             name="URL Count",
             score=15,
-            detail=f"Email contains {len(urls)} URLs which is unusually high"
+            detail=f"Email contains {len(urls)} URLs which is unusually high",
         )
-    return SignalResult(name="URL Count", score=0, detail=f"URL count looks normal ({len(urls)})")
+    return SignalResult(
+        name="URL Count",
+        score=0,
+        detail=f"URL count looks normal ({len(urls)})",
+    )
 
 
-# זיהוי תווים בינלאומיים מתחזים בשם הדומיין
+# Signal 5: Evaluates Unicode Homoglyph domain spoofing variations
 def check_homoglyphs(sender: str) -> SignalResult:
     try:
         sender_domain = sender.split("@")[-1].strip(">").lower()
-        if re.search(r'[^\x00-\x7F]', sender_domain):
+        if re.search(r"[^\x00-\x7F]", sender_domain):
             return SignalResult(
                 name="Homoglyph Detection",
                 score=40,
-                detail=f"Non-ASCII characters detected in sender domain ({sender_domain}). High risk of brand impersonation."
+                detail=f"Non-ASCII characters detected in sender domain ({sender_domain}). High risk of brand impersonation.",
             )
     except Exception:
         pass
-    return SignalResult(name="Homoglyph Detection", score=0, detail="Sender domain contains valid ASCII characters")
+    return SignalResult(
+        name="Homoglyph Detection",
+        score=0,
+        detail="Sender domain contains valid ASCII characters",
+    )
 
 
-# בדיקת גיל הדומיין באמצעות פרוטוקול RDAP
+# Signal 6: Performs RDAP registration lookups to catch newly-created domains
 def check_domain_age(sender: str) -> SignalResult:
     try:
         sender_domain = sender.split("@")[-1].strip(">").lower()
 
         if sender_domain in FREE_EMAIL_DOMAINS:
-            return SignalResult(name="Domain Age Check", score=0, detail="Sender uses a trusted public email provider")
+            return SignalResult(
+                name="Domain Age Check",
+                score=0,
+                detail="Sender uses a trusted public email provider",
+            )
 
-        response = requests.get(f"https://rdap.org/domain/{sender_domain}", timeout=4)
+        response = requests.get(
+            f"https://rdap.org/domain/{sender_domain}", timeout=4
+        )
         if response.status_code == 200:
             data = response.json()
             events = data.get("events", [])
@@ -166,16 +216,24 @@ def check_domain_age(sender: str) -> SignalResult:
                         return SignalResult(
                             name="Domain Age Check",
                             score=35,
-                            detail=f"Sender domain is newly registered ({age_days} days old). High phishing correlation."
+                            detail=f"Sender domain is newly registered ({age_days} days old). High phishing correlation.",
                         )
-                    return SignalResult(name="Domain Age Check", score=0, detail=f"Domain age is stable ({age_days} days old)")
+                    return SignalResult(
+                        name="Domain Age Check",
+                        score=0,
+                        detail=f"Domain age is stable ({age_days} days old)",
+                    )
     except Exception:
         pass
 
-    return SignalResult(name="Domain Age Check", score=0, detail="Domain age validation skipped or unavailable")
+    return SignalResult(
+        name="Domain Age Check",
+        score=0,
+        detail="Domain age validation skipped or unavailable",
+    )
 
 
-# בודקת אם ה-URL מגיע מדומיין עם TLD חשוד
+# Signal 7: Flags hyperlinks matching untrusted, low-cost top-level domains
 def check_suspicious_tlds(body: str) -> SignalResult:
     urls = URL_REGEX.findall(body)
     flagged = []
@@ -191,16 +249,24 @@ def check_suspicious_tlds(body: str) -> SignalResult:
         return SignalResult(
             name="Suspicious TLD",
             score=20,
-            detail=f"URLs with high-risk domain extensions found: {', '.join(flagged[:3])}"
+            detail=f"URLs with high-risk domain extensions found: {', '.join(flagged[:3])}",
         )
-    return SignalResult(name="Suspicious TLD", score=0, detail="No suspicious domain extensions found")
+    return SignalResult(
+        name="Suspicious TLD",
+        score=0,
+        detail="No suspicious domain extensions found",
+    )
 
 
-# בודקת אם האימייל מתחזה למותג מוכר בזמן שנשלח מדומיין לא קשור
+# Signal 8: Discovers unauthorized brand name mentions in mismatched domains
 def check_brand_spoofing(sender: str, body: str) -> SignalResult:
     brand_in_body = BRAND_SPOOF_PATTERNS.search(body)
     if not brand_in_body:
-        return SignalResult(name="Brand Spoofing", score=0, detail="No brand impersonation detected")
+        return SignalResult(
+            name="Brand Spoofing",
+            score=0,
+            detail="No brand impersonation detected",
+        )
 
     sender_domain = sender.split("@")[-1].strip(">").lower()
     brand = brand_in_body.group(0).lower()
@@ -209,12 +275,16 @@ def check_brand_spoofing(sender: str, body: str) -> SignalResult:
         return SignalResult(
             name="Brand Spoofing",
             score=30,
-            detail=f"Email mentions '{brand}' but was sent from '{sender_domain}'"
+            detail=f"Email mentions '{brand}' but was sent from '{sender_domain}'",
         )
-    return SignalResult(name="Brand Spoofing", score=0, detail="Sender domain matches the mentioned brand")
+    return SignalResult(
+        name="Brand Spoofing",
+        score=0,
+        detail="Sender domain matches the mentioned brand",
+    )
 
 
-# מריצה את כל הבדיקות, מחברת את הציונים ומחליטה על verdict סופי
+# Orchestrates evaluation pipeline execution and weights cumulative threat level
 def score_email(email: EmailRequest) -> ScanResult:
     signals = [
         check_phishing_keywords(email.body),
@@ -224,7 +294,7 @@ def score_email(email: EmailRequest) -> ScanResult:
         check_homoglyphs(email.sender),
         check_domain_age(email.sender),
         check_suspicious_tlds(email.body),
-        check_brand_spoofing(email.sender, email.body)
+        check_brand_spoofing(email.sender, email.body),
     ]
 
     total = sum(s.score for s in signals)

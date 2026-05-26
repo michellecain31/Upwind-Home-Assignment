@@ -1,14 +1,14 @@
-# כל סריקה שנעשית נשמרת פה - זה מה שמאפשר לנו להציג היסטוריה
+# Database abstraction layer for persistent storage and historical audit tracking.
 
-import sqlite3
 import json
+import sqlite3
 from datetime import datetime
 
 DB_PATH = "scans.db"
 
 
-# יוצרת את הטבלה אם היא עדיין לא קיימת - רצה פעם אחת בעליית השרת
 def init_db():
+    """Initializes schema on application startup if database table is absent."""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("""
@@ -26,28 +26,43 @@ def init_db():
     conn.close()
 
 
-# שומרת סריקה חדשה - הsignals הם רשימה אז הופכים אותם ל-JSON לפני השמירה
-def save_scan(sender: str, subject: str, verdict: str, total_score: int, signals: list):
+def save_scan(
+    sender: str, subject: str, verdict: str, total_score: int, signals: list
+):
+    """Persists evaluation context, serializing complex objects into JSON text."""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("""
+    cursor.execute(
+        """
         INSERT INTO scans (sender, subject, verdict, total_score, signals, scanned_at)
         VALUES (?, ?, ?, ?, ?, ?)
-    """, (sender, subject, verdict, total_score, json.dumps(signals), datetime.utcnow().isoformat()))
+    """,
+        (
+            sender,
+            subject,
+            verdict,
+            total_score,
+            json.dumps(signals),
+            datetime.utcnow().isoformat(),
+        ),
+    )
     conn.commit()
     conn.close()
 
 
-# מחזירה את הסריקות האחרונות, מהחדשה לישנה
 def get_recent_scans(limit: int = 20):
+    """Retrieves recent evaluation logs sorted by chronological recency."""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT sender, subject, verdict, total_score, signals, scanned_at
         FROM scans
         ORDER BY scanned_at DESC
         LIMIT ?
-    """, (limit,))
+    """,
+        (limit,),
+    )
     rows = cursor.fetchall()
     conn.close()
 
@@ -57,8 +72,8 @@ def get_recent_scans(limit: int = 20):
             "subject": r[1],
             "verdict": r[2],
             "total_score": r[3],
-            "signals": json.loads(r[4]),
-            "scanned_at": r[5]
+            "signals": json.loads(r[4]),  # Deserializes telemetry breakdown
+            "scanned_at": r[5],
         }
         for r in rows
     ]
